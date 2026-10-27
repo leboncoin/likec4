@@ -23,6 +23,7 @@ export type {
   OnEdgeClick,
   OnInitialized,
   OnNavigateTo,
+  OnNavigateToProject,
   OnNodeClick,
   OnOpenSource,
   PaddingWithUnit,

@@ -5,16 +5,53 @@
 //
 // Portions of this file have been modified by NVIDIA CORPORATION & AFFILIATES.
 
-import { IconTransform, IconZoomScan } from '@tabler/icons-react'
-import { useMemo } from 'react'
+import { IconArrowUpRight, IconTransform, IconZoomScan } from '@tabler/icons-react'
+import { type MouseEvent as ReactMouseEvent, useMemo } from 'react'
 import { hasAtLeast } from 'remeda'
 import type { SimplifyDeep } from 'type-fest'
 import { ElementActionButtons } from '../../../base-primitives'
 import type { BaseNodeData } from '../../../base/types'
 import { useEnabledFeatures } from '../../../context/DiagramFeatures'
+import { type CrossProjectNavigation, useCrossProjectNavigation } from '../../../hooks/useCrossProjectNavigation'
 import { useDiagram } from '../../../hooks/useDiagram'
 import { readableText } from '../../../utils'
 import type { Types } from '../../types'
+
+/**
+ * Navigate buttons: to the view in this project, to the view in the project the element comes from,
+ * or both when the local one goes to another view than the element's own (e.g. a flow).
+ */
+function navigateButtons(
+  navigateLocally: ((e: ReactMouseEvent) => void) | null,
+  crossProject: CrossProjectNavigation | null,
+): ElementActionButtons.Item[] {
+  if (crossProject?.replacesLocal) {
+    return [{
+      key: 'navigate',
+      ariaLabel: 'Navigate to view in its project',
+      icon: <IconZoomScan />,
+      onClick: crossProject.onClick,
+    }]
+  }
+  const buttons = [] as ElementActionButtons.Item[]
+  if (navigateLocally) {
+    buttons.push({
+      key: 'navigate',
+      ariaLabel: 'Navigate to view',
+      icon: <IconZoomScan />,
+      onClick: navigateLocally,
+    })
+  }
+  if (crossProject) {
+    buttons.push({
+      key: 'navigate-project',
+      ariaLabel: 'Navigate to view in its project',
+      icon: <IconArrowUpRight />,
+      onClick: crossProject.onClick,
+    })
+  }
+  return buttons
+}
 
 type WithExtraButtons = {
   /**
@@ -78,21 +115,18 @@ export function ElementActions({
   const { enableNavigateTo, enableRelationshipBrowser } = useEnabledFeatures()
   const diagram = useDiagram()
   const { id, navigateTo, modelFqn, title } = props.data
+  const crossProject = useCrossProjectNavigation(modelFqn, navigateTo)
   let buttons = useMemo(() => {
-    const buttons = [] as ElementActionButtons.Item[]
     const labelTitle = readableText(title) || id
-
-    if (navigateTo && enableNavigateTo) {
-      buttons.push({
-        key: 'navigate',
-        ariaLabel: 'Navigate to view',
-        icon: <IconZoomScan />,
-        onClick: (e) => {
+    const buttons = navigateButtons(
+      navigateTo && enableNavigateTo
+        ? (e) => {
           e.stopPropagation()
           diagram.navigateTo(navigateTo, id)
-        },
-      })
-    }
+        }
+        : null,
+      crossProject,
+    )
     if (enableRelationshipBrowser) {
       buttons.push({
         key: 'relationships',
@@ -105,7 +139,7 @@ export function ElementActions({
       })
     }
     return buttons
-  }, [enableNavigateTo, enableRelationshipBrowser, modelFqn, navigateTo, id, title, diagram])
+  }, [enableNavigateTo, enableRelationshipBrowser, modelFqn, navigateTo, crossProject, id, title, diagram])
 
   if (extraButtons && hasAtLeast(extraButtons, 1)) {
     buttons = [...buttons, ...extraButtons]
@@ -154,22 +188,19 @@ export const DeploymentElementActions = ({
   const { enableNavigateTo, enableRelationshipBrowser } = useEnabledFeatures()
   const diagram = useDiagram()
   const { id, navigateTo, modelFqn, title } = props.data
+  const crossProject = useCrossProjectNavigation(modelFqn, navigateTo)
 
   let buttons = useMemo(() => {
-    const buttons = [] as ElementActionButtons.Item[]
     const labelTitle = readableText(title) || id
-
-    if (navigateTo && enableNavigateTo) {
-      buttons.push({
-        key: 'navigate',
-        ariaLabel: 'Navigate to view',
-        icon: <IconZoomScan />,
-        onClick: (e) => {
+    const buttons = navigateButtons(
+      navigateTo && enableNavigateTo
+        ? (e) => {
           e.stopPropagation()
           diagram.navigateTo(navigateTo, id)
-        },
-      })
-    }
+        }
+        : null,
+      crossProject,
+    )
     if (enableRelationshipBrowser && !!modelFqn) {
       buttons.push({
         key: 'relationships',
@@ -182,7 +213,7 @@ export const DeploymentElementActions = ({
       })
     }
     return buttons
-  }, [enableNavigateTo, enableRelationshipBrowser, modelFqn, navigateTo, id, title, diagram])
+  }, [enableNavigateTo, enableRelationshipBrowser, modelFqn, navigateTo, crossProject, id, title, diagram])
 
   if (extraButtons && hasAtLeast(extraButtons, 1)) {
     buttons = [...buttons, ...extraButtons]

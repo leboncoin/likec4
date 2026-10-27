@@ -6,8 +6,10 @@
 // Portions of this file have been modified by NVIDIA CORPORATION & AFFILIATES.
 
 import type { NodeId } from '@likec4/core'
+import { IconArrowUpRight } from '@tabler/icons-react'
 import { CompoundActionButton } from '../../../base-primitives'
 import { useEnabledFeatures } from '../../../context/DiagramFeatures'
+import { useCrossProjectNavigation } from '../../../hooks/useCrossProjectNavigation'
 import { useDiagram } from '../../../hooks/useDiagram'
 import type { Types } from '../../types'
 
@@ -17,18 +19,41 @@ export const CompoundActions = (props: CompoundActionsProps) => {
   const { enableNavigateTo } = useEnabledFeatures()
   const diagram = useDiagram()
 
-  const { navigateTo } = props.data
-  if (navigateTo && enableNavigateTo) {
+  const { navigateTo, modelFqn } = props.data
+  const crossProject = useCrossProjectNavigation(modelFqn, navigateTo)
+  if (crossProject?.replacesLocal) {
     return (
       <CompoundActionButton
-        ariaLabel="Navigate to view"
-        onClick={(e) => {
-          e.stopPropagation()
-          diagram.navigateTo(navigateTo, props.id as NodeId)
-        }}
+        ariaLabel="Navigate to view in its project"
+        onClick={crossProject.onClick}
         {...props}
       />
     )
   }
-  return null
+  const navigateLocally = !!navigateTo && enableNavigateTo
+  if (!navigateLocally && !crossProject) {
+    return null
+  }
+  return (
+    <>
+      {navigateLocally && (
+        <CompoundActionButton
+          ariaLabel="Navigate to view"
+          onClick={(e) => {
+            e.stopPropagation()
+            diagram.navigateTo(navigateTo, props.id as NodeId)
+          }}
+          {...props}
+        />
+      )}
+      {crossProject && (
+        <CompoundActionButton
+          ariaLabel="Navigate to view in its project"
+          icon={<IconArrowUpRight stroke={2} />}
+          onClick={crossProject.onClick}
+          {...props}
+        />
+      )}
+    </>
+  )
 }

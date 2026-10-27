@@ -15,6 +15,7 @@ type RequiredOrNull<T> = {
 
 const defaultHandlers: Required<LikeC4DiagramEventHandlers> = {
   onNavigateTo: null,
+  onNavigateToProject: null,
   onNodeClick: null,
   onNodeContextMenu: null,
   onCanvasContextMenu: null,

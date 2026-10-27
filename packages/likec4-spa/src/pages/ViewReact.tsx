@@ -23,7 +23,7 @@ import { pageTitle as defaultPageTitle } from 'likec4:app-config'
 import { useEffect, useRef } from 'react'
 import { NotFound } from '../components/NotFound'
 import { headerOps } from '../components/view-page/state'
-import { useCurrentProject, useCurrentView } from '../hooks'
+import { useCurrentProject, useCurrentView, useNavigateToProject } from '../hooks'
 import { useRelationshipBrowserScope } from '../relationship-browser/scope'
 
 export function ViewReact() {
@@ -47,6 +47,7 @@ export function ViewReact() {
       search: true,
     })
   })
+  const onNavigateToProject = useNavigateToProject()
 
   const title = view ? (view.title ?? view.id) : `View not found`
   const pageTitle = model.project.title ?? defaultPageTitle
@@ -86,6 +87,7 @@ export function ViewReact() {
       enableNotations={hasNotations}
       nodesSelectable
       onNavigateTo={onNavigateTo}
+      onNavigateToProject={onNavigateToProject}
       onLayoutTypeChange={setLayoutType}
       onLogoClick={() => {
         void navigate({
@@ -99,6 +101,8 @@ export function ViewReact() {
     </LikeC4Diagram>
   )
 }
+
+const selectXYNodes = selectDiagramContext((c) => c.xynodes)
 
 /**
  * Opens Relationship Browser when `?relationships={elementFqn}` URL parameter is present.
@@ -169,7 +173,8 @@ export function OpenRelationshipBrowserFromUrl({
 
 /**
  * Focuses on an element when `?focusOnElement={elementFqn}` URL parameter is present.
- * Used when navigating from the overview search with an element target.
+ * Used when navigating from the overview search with an element target, or from another project
+ * (the diagram stays mounted then, so the view change triggers it, not `initialized`).
  * Clears the parameter after focusing to prevent refocusing on navigation.
  */
 export function FocusElementFromUrl() {
@@ -178,7 +183,11 @@ export function FocusElementFromUrl() {
   const { focusOnElement } = useSearch({
     from: '__root__',
   })
+  const xynodes = useDiagramSelector(selectXYNodes)
+  const hasFocusTarget = !!focusOnElement
+    && xynodes.some(n => 'modelFqn' in n.data && n.data.modelFqn === focusOnElement)
   const processedRef = useRef<Fqn | null>(null)
+  const isInitializedRef = useRef(false)
 
   const focusAndClear = useCallbackRef((fqn: Fqn) => {
     try {
@@ -199,6 +208,7 @@ export function FocusElementFromUrl() {
   })
 
   useOnDiagramEvent('initialized', () => {
+    isInitializedRef.current = true
     if (focusOnElement && processedRef.current !== focusOnElement) {
       focusAndClear(focusOnElement)
     }
@@ -207,8 +217,12 @@ export function FocusElementFromUrl() {
   useUpdateEffect(() => {
     if (!focusOnElement) {
       processedRef.current = null
+      return
     }
-  }, [focusOnElement])
+    if (isInitializedRef.current && hasFocusTarget && processedRef.current !== focusOnElement) {
+      focusAndClear(focusOnElement)
+    }
+  }, [focusOnElement, hasFocusTarget])
 
   return null
 }

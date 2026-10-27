@@ -13,7 +13,7 @@ import { isAIAvailable, likec4rpc } from 'likec4:rpc'
 import { LazyAIChat } from '../aichat'
 import { NotFound } from '../components/NotFound'
 import { useLikeC4ModelAtom } from '../context/safeCtx'
-import { useCurrentProject, useCurrentView } from '../hooks'
+import { useCurrentProject, useCurrentView, useNavigateToProject } from '../hooks'
 import { useRelationshipBrowserScope } from '../relationship-browser/scope'
 import { FocusElementFromUrl, ListenForDiagramStateChanges, OpenRelationshipBrowserFromUrl } from './ViewReact'
 
@@ -36,6 +36,7 @@ export function ViewEditor() {
       search: true,
     })
   })
+  const onNavigateToProject = useNavigateToProject()
 
   if (!view) {
     return <NotFound />
@@ -93,6 +94,7 @@ export function ViewEditor() {
         enableCompareWithLatest
         dynamicViewVariant={dynamic}
         onNavigateTo={onNavigateTo}
+        onNavigateToProject={onNavigateToProject}
         onLayoutTypeChange={setLayoutType}
         onLogoClick={() => {
           void navigate({

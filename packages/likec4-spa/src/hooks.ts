@@ -1,10 +1,10 @@
 import type { LayoutedView, LayoutType, ViewId } from '@likec4/core/types'
-import { useUpdateEffect } from '@likec4/diagram'
+import { type OnNavigateToProject, useUpdateEffect } from '@likec4/diagram'
 import { useIsomorphicLayoutEffect } from '@react-hookz/web'
-import { type MakeRouteMatchUnion, useMatches, useParams } from '@tanstack/react-router'
+import { type MakeRouteMatchUnion, useMatches, useNavigate, useParams } from '@tanstack/react-router'
 import { deepEqual, shallowEqual } from 'fast-equals'
 import { type Project, useLikeC4Projects } from 'likec4:projects'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLikeC4ModelAtom } from './context/safeCtx'
 
 // To get the transparent background
@@ -20,6 +20,26 @@ export function useTransparentBackground(enabled = true) {
       htmlEl.classList.remove(classname)
     }
   }, [enabled])
+}
+
+/**
+ * Opens a view of another project, focused on the element it was opened from
+ */
+export function useNavigateToProject(): OnNavigateToProject {
+  const navigate = useNavigate()
+  return useCallback<OnNavigateToProject>(({ projectId, viewId, focusOnElement }) => {
+    void navigate({
+      to: '/project/$projectId/view/$viewId/',
+      params: { projectId, viewId },
+      search: (prev) => ({
+        ...prev,
+        dynamic: undefined,
+        relationships: undefined,
+        relationshipsScope: undefined,
+        focusOnElement: focusOnElement ?? undefined,
+      }),
+    })
+  }, [navigate])
 }
 
 export function useLikeC4Views(): ReadonlyArray<LayoutedView> {

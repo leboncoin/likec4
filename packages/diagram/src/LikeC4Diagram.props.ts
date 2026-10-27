@@ -350,6 +350,19 @@ export type OnNavigateTo<A extends Any = Unknown> = (
   element?: DiagramNodeWithNavigate<A>,
 ) => void
 
+/**
+ * Navigation to a view of another project, from an element linking to it (`/project/<id>/view/<view>/`)
+ */
+export type OnNavigateToProject = (
+  target: {
+    projectId: t.ProjectId
+    viewId: t.ViewId
+    // Element to focus on the target view, if it comes from that project
+    focusOnElement: t.Fqn | null
+  },
+  event?: ReactMouseEvent,
+) => void
+
 export type OnNodeClick<A extends Any = Unknown> = (
   node: DiagramNode<A>,
   event: ReactMouseEvent,
@@ -375,6 +388,11 @@ export type OnRelationshipBrowserScopeChange = (scope: RelationshipBrowserScope)
 
 export interface LikeC4DiagramEventHandlers<A extends Any = Unknown> {
   onNavigateTo?: OnNavigateTo<A> | null | undefined
+  /**
+   * If set, elements without navigation in this project but linking to a view of another
+   * project get a navigate button to it
+   */
+  onNavigateToProject?: OnNavigateToProject | null | undefined
   onNodeClick?: OnNodeClick<A> | null | undefined
   onNodeContextMenu?: OnNodeClick<A> | null | undefined
   onCanvasContextMenu?: OnCanvasContextMenu | null | undefined
