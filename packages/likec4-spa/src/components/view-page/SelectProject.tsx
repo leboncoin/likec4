@@ -13,13 +13,16 @@ import {
   ScrollArea,
 } from '@mantine/core'
 import { IconChevronDown, IconSearch } from '@tabler/icons-react'
-import { Link } from '@tanstack/react-router'
+import { Link, useMatches } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useCurrentProject } from '../../hooks'
 
 export function SelectProject() {
   const projects = useLikeC4Projects()
   const currentProject = useCurrentProject()
+  const isOverview = useMatches({
+    select: matches => matches.some(({ routeId }) => routeId === '/projects'),
+  })
   const [search, setSearch] = useState('')
 
   if (projects.length < 2) return null
@@ -47,7 +50,7 @@ export function SelectProject() {
           maw="250"
           rightSection={<IconChevronDown opacity={0.5} size={14} />}
           visibleFrom="md">
-          {currentProject.title ?? currentProject.id}
+          {isOverview ? 'Select project' : (currentProject.title ?? currentProject.id)}
         </Button>
       </MenuTarget>
 
@@ -67,6 +70,7 @@ export function SelectProject() {
               to={'/projects'}
             />
           )}
+          {...(isOverview && { fw: 'semibold' })}
         >
           Overview
         </MenuItem>
@@ -100,7 +104,7 @@ export function SelectProject() {
                 fontSize="sm"
                 truncate
                 maxWidth={'[300px]'}
-                css={currentProject.id === id ? { color: 'text.bright', fontWeight: 'semibold' } : {}}>
+                css={!isOverview && currentProject.id === id ? { color: 'text.bright', fontWeight: 'semibold' } : {}}>
                 <Highlight component="span" highlight={highlight} inherit>{title ?? id}</Highlight>
               </Txt>
             </MenuItem>
